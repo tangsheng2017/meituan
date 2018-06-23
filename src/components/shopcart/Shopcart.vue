@@ -15,7 +15,7 @@
 				<i class="num" v-show="totalCount">{{totalCount}}</i>
       </div>
       <div class="desc-wrapper">
-				<p class="total-price">
+				<p class="total-price" v-show="totalCount">
 					￥
 				</p>
         <p 

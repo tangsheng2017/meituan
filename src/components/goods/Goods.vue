@@ -5,7 +5,9 @@
       <ul>
         <!-- 专场 -->
         <li 
-          class="menu-item current" 
+          class="menu-item" 
+          :class="{ 'current': currentIndex == 0 }"
+          @click="selectMenu(0)"
           >
           <p class="text">
             <img class="icon" :src="container.tag_icon" v-if="container.tag_icon">
@@ -15,15 +17,16 @@
 
         <li 
             class="menu-item"
-            v-for="(good,index) in goods"
-            :key="index"
+            v-for="(good,index) in goods" :key="index"
+            :class="{ 'current': currentIndex == index + 1 }"
+            @click="selectMenu(index+1)"
             >
           <p class="text">
             <img class="icon" :src="good.icon" v-if="good.icon">
             {{good.name}}
           </p>
-          <i class="num" style="display:none">
-            
+          <i class="num" v-show="calculateCount(good.spus)">
+            {{calculateCount(good.spus)}}
           </i>
         </li>
       </ul>
@@ -45,7 +48,9 @@
           <ul>
             <li 
               v-for="(food,index) in items.spus" :key="index"
-              class="food-item">
+              class="food-item"
+              @click="showDetail(food)"
+              >
               <div class="icon" :style="head_bg(food.picture)"></div>
               <div class="content">
                 <h3 class="name">{{food.name}}</h3>
@@ -73,7 +78,7 @@
     <app-shopcart :poiInfo='poiInfo' :selectFoods='selectFoods'></app-shopcart>
 
     <!-- 商品详情 -->
-    <app-product-detail></app-product-detail>
+    <app-product-detail :food="selectFood" ref="foodView"></app-product-detail>
   </div>
 </template>
 
@@ -90,13 +95,29 @@ export default {
       container:[],
       goods:[],
       menuScroll:{},
-      foodScroll:{}
+      foodScroll:{},
+      listHeight:[],
+      scrollY:0,
+      selectFood:{}
     }
   },
   created(){
     this.getGoodsData()
   },
   computed:{
+    currentIndex(){
+      for(let i = 0; i < this.listHeight.length; i++){
+        // 获取商品区间的范围
+        let height1 = this.listHeight[i]
+        let height2 = this.listHeight[i+1]
+
+        // 是否在上述区间中
+        if(!height2 || (this.scrollY >= height1 && this.scrollY < height2)){
+          return i
+        }
+      }
+      return 0
+    },
     selectFoods(){
       let foods = []
 
@@ -111,6 +132,43 @@ export default {
     }
   },
   methods:{
+    showDetail(food){
+      this.selectFood = food
+
+      this.$refs.foodView.showView()
+    },
+    selectMenu(index){
+      let foodlist = this.$refs.foodScroll.getElementsByClassName('food-list-hook')
+      let element = foodlist[index]
+
+      // console.log(element)
+      this.foodScroll.scrollToElement(element, 250)
+    },
+    calculateHeight(){
+      // 1、获取元素
+      let foodlist = this.$refs.foodScroll.getElementsByClassName('food-list-hook')
+      // console.log(foodlist[0].clientHeight)
+
+      let height = 0
+      this.listHeight.push(height)
+
+      for(let i = 0; i < foodlist.length; i++){
+        let item = foodlist[i]
+
+        // 累加
+        height += item.clientHeight
+        this.listHeight.push(height)
+      }
+    },
+    calculateCount(spus){
+      let count = 0
+      spus.forEach((food)=>{
+        if(food.count > 0){
+          count += food.count
+        }
+      })
+      return count
+    },
     getGoodsData(){
       let _this = this;
 
@@ -120,7 +178,13 @@ export default {
           _this.container = response.data.data.container_operation_source
           _this.goods = response.data.data.food_spu_tags
 
-          _this.initScroll()
+          _this.$nextTick(() => {
+            // 执行滚动方法
+            _this.initScroll()
+
+            //计算分类的区间高度
+            _this.calculateHeight()
+          })
         })
     },
     head_bg(imgName){
@@ -131,7 +195,14 @@ export default {
         click:true
       })
       this.foodScroll = new BScroll(this.$refs.foodScroll, {
+        probeType:3,
         click:true
+      })
+
+      this.foodScroll.on('scroll',(pos) => {
+        // console.log(pos.y)
+        this.scrollY = Math.abs(Math.round(pos.y))
+        // console.log(this.scrollY)
       })
     }
   },

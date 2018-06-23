@@ -3,7 +3,7 @@
     <!-- header -->
     <app-header :poiInfo='poiInfo'></app-header>
     <!-- navigation -->
-    <app-nav></app-nav>
+    <app-nav :commentNum='commentNum'></app-nav>
     <!-- content -->
     <keep-alive>
       <router-view></router-view>
@@ -20,7 +20,8 @@ export default {
   name: 'App',
   data(){
     return{
-      poiInfo: {}
+      poiInfo: {},
+      commentNum:0
     }
   },
   components:{
@@ -29,6 +30,17 @@ export default {
   },
   created(){
     this.getGoodsData()
+
+    // 请求ratings
+    fetch("/api/ratings")
+      .then(res => {
+        return res.json()
+      })
+      .then(response =>{
+        if(response.code == 0){
+          this.commentNum = response.data.comment_num
+        }
+      })
   },
   methods:{
     getGoodsData(){
@@ -37,7 +49,6 @@ export default {
       axios.get('/api/goods')
         .then(function(response){
           _this.poiInfo = response.data.data.poi_info
-          console.log(response.data.data.poi_info)
         })
     }
   }

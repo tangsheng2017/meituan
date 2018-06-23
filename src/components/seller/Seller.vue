@@ -1,25 +1,26 @@
 <template>
-  <div class="seller">
+  <div class="seller" ref="sellerView">
     <div class="seller-wrapper">
 			<Split></Split>
 			<div class="seller-view">
         <div class="address-wrapper">
           <div class="address-left">
-            
+            {{seller.address}}
           </div>
           <div class="address-right">
             <div class="content"></div>
           </div>
         </div>
 
-        <div class="pics-wrapper">
-          <ul class="pics-list">
+        <div class="pics-wrapper" v-if="seller.poi_env" ref="picsView">
+          <ul class="pics-list" ref="picsList">
             <li
-              
+              v-for="(imgurl,index) in seller.poi_env.thumbnails_url_list"
+							:key="index"
               class="pics-item"
-              
+              ref="picsItem"
               >
-              <img>
+              <img :src="imgurl">
             </li>
           </ul>
         </div>
@@ -33,11 +34,11 @@
 			<Split></Split>
 			<div class="tip-wrapper">
 				<div class="delivery-wrapper">
-          配送服务: 
+          配送服务: {{seller.app_delivery_tip}}
         </div>
 
         <div class="shipping-wrapper">
-          配送时间:
+          配送时间: {{seller.shipping_time}}
         </div>
 			</div>
 
@@ -47,21 +48,23 @@
           商家服务
           <div 
             class="poi-server" 
-            
+            v-for="(item,index) in seller.poi_service"
+						:key="index"
             >
-            <img> 
+            <img :src="item.icon"> {{item.content}}
           </div>
         </div>
         <div class="discounts-wrapper">
            <div 
             class="discounts-item"
-            
+            v-for="(item,index) in seller.discounts2"
+            :key="index"
             >
             <div class="icon">
-              <img>
+              <img :src="item.icon_url">
             </div>
             <div class="text">
-              
+              {{item.info}}
             </div>
            </div>
         </div>
@@ -71,8 +74,41 @@
 </template>
 
 <script>
+import BScroll from 'better-scroll'
 import Split from '../split/Split'
 export default {
+	data(){
+    return {
+      seller:{}
+    }
+  },
+	created(){
+		fetch("/api/seller")
+      .then(res => {
+        return res.json()
+      })
+      .then(response =>{
+        if(response.code == 0){
+          this.seller = response.data
+
+          this.$nextTick(() => {
+            if(this.seller.poi_env.thumbnails_url_list){
+              let imgW = this.$refs.picsItem[0].clientWidth
+              let marginR = 11
+              let width = (imgW + marginR) * this.seller.poi_env.thumbnails_url_list.length
+
+              this.$refs.picsList.style.width = width + "px"
+
+              this.scroll = new BScroll(this.$refs.picsView,{
+                scrollX:true
+              })
+            }
+
+            this.sellerView = new BScroll(this.$refs.sellerView)
+          })
+        }
+      })
+	},
   components:{
     Split
   }

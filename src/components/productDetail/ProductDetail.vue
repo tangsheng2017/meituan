@@ -1,25 +1,25 @@
 <template>
 	<transition name="food-detail">
-    <div class="food" style="display:none">
+    <div class="food" ref="foodView" v-show="showFlag">
       <div class="food-wrapper">
         <div class="food-content">
           <div class="img-wrapper">
-            <img class="food-img"/>
+            <img class="food-img" :src="food.picture"/>
             <span 
               class="close-bt icon-close"
-              
+              @click="closeView()"
               ></span>
             <img class="share-bt" src="./img/share.png" />
             <img class="more-bt" src="./img/more.png" />
           </div>
 
            <div class="content-wrapper">
-              <h3 class="name"></h3>
-              <p class="saled"></p>
-              <img class="product"/>
+              <h3 class="name">{{food.name}}</h3>
+              <p class="saled">{{food.month_saled_content}}</p>
+              <img class="product" v-show="food.product_label_picture" :src="food.product_label_picture"/>
               <p class="price">
-                <span class="text">￥</span>
-                <span class="unit">/</span>
+                <span class="text">￥{{food.min_price}}</span>
+                <span class="unit">/{{food.unit}}</span>
               </p>
 
               <div class="cartcontrol-wrapper">
@@ -38,38 +38,39 @@
         <div class="rating-wrapper">
           <!-- 评价头部 -->
           <div class="rating-title">
-            <div class="like-ratio">
-              <span class="title"></span>
+            <div class="like-ratio" v-if="food.rating">
+              <span class="title">{{food.rating.title}}</span>
               <span class="retio">
                 (
-                  
-                  <i></i>
+                  {{food.rating.like_ratio_desc}}
+                  <i>{{food.rating.like_ratio}}</i>
                 )
               </span>
             </div>
-            <div class="snd-title">
-                  <span class="text"></span> 
+            <div class="snd-title" v-if="food.rating">
+                  <span class="text">{{food.rating.snd_title}}</span> 
                   <span class="icon icon-keyboard_arrow_right"></span> 
             </div>
           </div>
-          <ul class="rating-content">
+          <ul class="rating-content" v-if="food.rating">
             <li 
-              
+              v-for="(comment,index) in food.rating.comment_list"
+							:key="index"
               class="comment-item"
               >
               <div class="comment-header">
-                <img />
-                <img src="./img/anonymity.png" />
+                <img :src="comment.user_icon" v-if="comment.user_icon" />
+                <img src="./img/anonymity.png" v-if="!comment.user_icon" />
               </div>
               <div class="comment-main">
                 <div class="user">
-                  
+                  {{comment.user_name}}
                 </div>
                 <div class="time">
-                  
+                  {{comment.comment_time}}
                 </div>
                 <div class="content">
-                  
+                  {{comment.comment_content}}
                 </div>
               </div>
             </li>
@@ -83,10 +84,39 @@
 </template>
 
 <script>
+import Vue from 'vue'
+import BScroll from 'better-scroll'
 import CartControl from '../cartcontrol/CartControl'
 import Split from '../split/Split'
 	export default {
-		
+		data(){
+			return{
+				showFlag:false
+			}
+		},
+		props:{
+			food:{
+				type:Object
+			}
+		},
+		methods:{
+			closeView(){
+				this.showFlag = false
+			},
+			showView(){
+        this.showFlag = true
+
+        this.$nextTick(() => {
+          if(!this.scroll){
+            this.scroll = new BScroll(this.$refs.foodView,{
+              click:true
+            })
+          }else{
+            this.scroll.refresh()
+          }
+        })
+      },
+		},
     components:{
       CartControl,
       Split
